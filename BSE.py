@@ -1512,17 +1512,17 @@ def trade_stats(expid, traders, dumpfile, time, lob):
         trader_types[ttype] = {'n': n, 'balance_sum': t_balance}
 
     # first two columns of output are the session_id and the time
-    dumpfile.write('%s, %06d, ' % (expid, time))
+    # dumpfile.write('%s, %06d, ' % (expid, time))
 
-    # second two columns of output are the LOB best bid and best offer (or 'None' if they're undefined)
-    if lob['bids']['best'] is not None:
-        dumpfile.write('%d, ' % (lob['bids']['best']))
-    else:
-        dumpfile.write('None, ')
-    if lob['asks']['best'] is not None:
-        dumpfile.write('%d, ' % (lob['asks']['best']))
-    else:
-        dumpfile.write('None, ')
+    # # second two columns of output are the LOB best bid and best offer (or 'None' if they're undefined)
+    # if lob['bids']['best'] is not None:
+    #     dumpfile.write('%d, ' % (lob['bids']['best']))
+    # else:
+    #     dumpfile.write('None, ')
+    # if lob['asks']['best'] is not None:
+    #     dumpfile.write('%d, ' % (lob['asks']['best']))
+    # else:
+    #     dumpfile.write('None, ')
 
     # total remaining number of columns printed depends on number of different trader-types at this timestep
     # for each trader type we print FOUR columns...
@@ -1530,7 +1530,7 @@ def trade_stats(expid, traders, dumpfile, time, lob):
     for ttype in sorted(list(trader_types.keys())):
         n = trader_types[ttype]['n']
         s = trader_types[ttype]['balance_sum']
-        dumpfile.write('%s, %d, %d, %f, ' % (ttype, s, n, s / float(n)))
+        dumpfile.write('%s, %f, ' % (ttype, s / float(n)))
 
     dumpfile.write('\n')
 
