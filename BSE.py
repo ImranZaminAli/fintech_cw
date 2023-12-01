@@ -2331,7 +2331,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
                 # so the counterparties update order lists and blotters
                 traders[trade['party1']].bookkeep(trade, order, bookkeep_verbose, time)
                 traders[trade['party2']].bookkeep(trade, order, bookkeep_verbose, time)
-                if dump_flags['dump_avgbals'] and time + timestep >= endtime:
+                if dump_flags['dump_avgbals'] and (time + timestep >= endtime):
                     trade_stats(sess_id, traders, avg_bals, time, exchange.publish_lob(time, lobframes, lob_verbose))
 
             # traders respond to whatever happened
