@@ -102,10 +102,12 @@ def get_traders_specs(algos, percentages, num_traders):
 
 def run_sessions(args):
 	market_args, initial_seed, instance, profits= args
-	print(instance, flush = True)
+	print(f'started {instance}', flush = True)
 	seed = initial_seed + instance
 	random.seed(seed)
 	market_session(str(seed), *market_args)
+	print(f'finished {instance}', flush = True)
+
 	
 
 def initialize_lock(l):
