@@ -8,8 +8,8 @@ import pingouin as pg
 import statsmodels
 from BSE import market_session
 from os import cpu_count
-import ctypes
-from multiprocessing import Pool, Value, Manager, Lock
+import numpy as np
+from multiprocessing import Pool
 
 def anova_test(profits):
 	anova = pg.rm_anova(data=profits, correction=True)
@@ -29,8 +29,8 @@ def anova_test(profits):
 
 def run_stat_tests(profits):
 	for col in profits.columns:
-	  print(f'{col}: mean={profits[col].mean()} std={profits[col].std()}')
-	print('Check each column if the data is normally distrubuted with the shapiro wilk test:')
+		print(f'{col}: mean={profits[col].mean()} std={profits[col].std()}')
+		print('Check each column if the data is normally distrubuted with the shapiro wilk test:')
 	is_normal = True
 	# check if the data is normally distributed
 	for col in profits.columns:
@@ -101,7 +101,7 @@ def get_traders_specs(algos, percentages, num_traders):
 
 
 def run_sessions(args):
-	market_args, initial_seed, instance, profits= args
+	market_args, initial_seed, instance= args
 	print(f'started {instance}', flush = True)
 	seed = initial_seed + instance
 	random.seed(seed)
@@ -109,10 +109,27 @@ def run_sessions(args):
 	print(f'finished {instance}', flush = True)
 
 	
+def part_d1(n, market_args, initial_seed):
+	
+	pps = pd.DataFrame()
+	with Pool(cpu_count()) as p:
+		p.map(run_sessions, [(market_args, initial_seed, i) for i in range(n)])
+		p.close()
+		p.join()
 
-def initialize_lock(l):
-	global lock
-	lock = l
+	for i in range(n):
+		filename = f'{i + initial_seed}_strats.csv'
+		file = open(filename, 'r')
+		lines = file.readlines()
+		file.close()
+		start_entry = np.average([float(value.split(',')[0].strip()) for value in lines[:5]])
+		end_entry = np.average([float(value.split(',')[0].strip()) for value in lines[-5:]])
+		pps_entry = pd.DataFrame({'start': [start_entry], 'end': [end_entry]})
+		
+		pps = pd.concat([pps, pps_entry], ignore_index=True)
+		
+	run_stat_tests(pps)
+
 
 # run n instances of market session. Collect the final profits for each trader for each session and store in a numpy array. Apply the appropriate hypothesis test
 def run_experiment(n, market_args, initial_seed):
@@ -126,7 +143,7 @@ def run_experiment(n, market_args, initial_seed):
 	ave_profits = pd.DataFrame()
 	with Pool(os.cpu_count()) as p:
 		print('hello')
-		p.map(run_sessions, [(market_args, initial_seed, instance, ave_profits) for instance in range(n)] )
+		p.map(run_sessions, [(market_args, initial_seed, instance) for instance in range(n)] )
 		p.close()
 		p.join()
 	for i in range(n):
