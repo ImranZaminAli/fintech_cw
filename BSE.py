@@ -2176,6 +2176,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
         # write one frame of strategy snapshot
 
         line_str = 't=,%.0f, ' % time
+        #line_str = ''
 
         best_buyer_id = None
         best_buyer_prof = 0
@@ -2190,7 +2191,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
 
             # print('PRSH/PRDE/ZIPSH strategy recording, t=%s' % trader)
             if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH':
-                line_str += 'id=,%s, %s,' % (trader.tid, trader.ttype)
+                #line_str += 'id=,%s, %s,' % (trader.tid, trader.ttype)
 
                 if trader.ttype == 'ZIPSH':
                     # we know that ZIPSH sorts the set of strats into best-first
@@ -2201,7 +2202,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
                     act_prof = trader.strats[trader.active_strat]['pps']
 
                 line_str += 'actvstrat=,%s ' % trader.strat_csv_str(act_strat)
-                line_str += 'actvprof=,%f, ' % act_prof
+                line_str += '%f, ' % act_prof
 
                 if trader.tid[:1] == 'B':
                     # this trader is a buyer
@@ -2219,13 +2220,13 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
                     # wtf?
                     sys.exit('unknown trader id type in market_session')
 
-        if best_buyer_id is not None:
-            line_str += 'best_B_id=,%s, best_B_prof=,%f, best_B_strat=, ' % (best_buyer_id, best_buyer_prof)
-            line_str += traders[best_buyer_id].strat_csv_str(best_buyer_strat)
+        #if best_buyer_id is not None:
+            #line_str += 'best_B_id=,%s, best_B_prof=,%f, best_B_strat=, ' % (best_buyer_id, best_buyer_prof)
+            #line_str += traders[best_buyer_id].strat_csv_str(best_buyer_strat)
 
-        if best_seller_id is not None:
-            line_str += 'best_S_id=,%s, best_S_prof=,%f, best_S_strat=, ' % (best_seller_id, best_seller_prof)
-            line_str += traders[best_seller_id].strat_csv_str(best_seller_strat)
+        #if best_seller_id is not None:
+            #line_str += 'best_S_id=,%s, best_S_prof=,%f, best_S_strat=, ' % (best_seller_id, best_seller_prof)
+            #line_str += traders[best_seller_id].strat_csv_str(best_seller_strat)
 
         line_str += '\n'
 
