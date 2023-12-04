@@ -2175,8 +2175,8 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
     def dump_strats_frame(time, stratfile, trdrs):
         # write one frame of strategy snapshot
 
-        #line_str = 't=,%.0f, ' % time
-        line_str = ''
+        line_str = 't=,%.0f, ' % time
+        #line_str = ''
 
         best_buyer_id = None
         best_buyer_prof = 0
@@ -2201,7 +2201,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
                     act_strat = trader.strats[trader.active_strat]['stratval']
                     act_prof = trader.strats[trader.active_strat]['pps']
 
-                #line_str += 'actvstrat=,%s ' % trader.strat_csv_str(act_strat)
+                line_str += 'actvstrat=,%s ' % trader.strat_csv_str(act_strat)
                 line_str += '%f, ' % act_prof
 
                 if trader.tid[:1] == 'B':

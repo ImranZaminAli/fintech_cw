@@ -27,6 +27,17 @@ def anova_test(profits):
 	#     print(f'Do not reject null hypothesis {p={}}')
 	return statistic, pvalue
 
+def anova(df):
+	anova = pg.rm_anova(data=df, correction=True)
+	sphericity = anova['p-spher'][0]
+	pvalue = None
+	if anova['sphericity'][0]:
+		pvalue = anova['p-unc'][0]
+	else:
+		pvalue = anova['p-GG-corr'][0]
+
+	return pvalue
+
 def run_stat_tests(profits):
 	for col in profits.columns:
 		print(f'{col}: mean={profits[col].mean()} std={profits[col].std()}')
@@ -86,6 +97,43 @@ def run_stat_tests(profits):
 		result = list(zip(selected_rows['A'], selected_rows['B'], selected_rows['p-corr']))
 		print(result)
 
+def run_stats(n : int, df : pd.DataFrame, summary_entry):
+	is_normal = True
+	for col in df.columns:
+		_, pvalue = stats.shapiro(df[col])
+		if pvalue < 0.05:
+			is_normal = False
+		summary_entry[f'{col} normality'] = pvalue
+
+	summary_entry['Reject null'] = not is_normal
+
+	# check if comes from the same population
+	columns = [df[column] for column in df.columns]
+	is_two_dist = len(columns) == 2
+	pvalue = None
+	further_test = False
+	test_name = None
+	if is_normal and is_two_dist:
+		test_name = 'paired t-test'
+		_, pvalue = stats.ttest_rel(*columns)
+	elif is_normal and (not is_two_dist):
+		test_name = 'Repeated Measures Anova'
+		pvalue = anova(df)
+		further_test = pvalue < 0.05
+	elif (not is_normal) and is_two_dist:
+		test_name = 'Wilcoxon Signed Rank test'
+		stats.wilcoxon(*columns)
+	else:
+		test_name = 'Friedman Test'
+		_, pvalue = stats.friedmanchisquare(*columns)
+		further_test = pvalue < 0.05
+
+	summary_entry['Test Name'] = test_name
+	summary_entry['P Value'] = pvalue
+	summary_entry['Reject Null'] = pvalue < 0.05
+
+	return summary_entry
+
 
 # given a tuple of the algos, a tuple of the percentages for that trader and the number of traders return the specs
 def get_traders_specs(algos, percentages, num_traders):
@@ -108,6 +156,56 @@ def run_sessions(args):
 	market_session(str(seed), *market_args)
 	print(f'finished {instance}', flush = True)
 
+def create_threads(market_args, initial_seed, n):
+	profits = pd.DataFrame()
+	with Pool(os.cpu_count()) as p:
+		p.map(run_sessions, [(market_args, initial_seed, instance) for instance in range(n)] )
+		p.close()
+		p.join()
+	for i in range(n):
+		filename = f'{i + initial_seed}_avg_balance.csv'
+		file = open(filename, 'r')
+		final_entry = (file.readlines()[-1]).split(',')
+		file.close()
+		profit_entry = {}
+		for j in range(0, len(final_entry)-2, 2):
+			col_name = final_entry[j].strip()
+			col_val = final_entry[j+1]
+			profit_entry[col_name] = float(col_val.strip())
+		entry_df = pd.DataFrame([profit_entry])
+		profits = pd.concat([profits, entry_df], ignore_index=True)
+	return profits
+
+def part_a(n, market_args, initial_seed, r_vals):
+	stat_summary = pd.DataFrame()
+	fig, axes = plt.subplots(2,2)
+	for i in range(len(n)):
+		# profits = pd.DataFrame()
+		# with Pool(os.cpu_count()) as p:
+		# 	p.map(run_sessions, [(market_args, initial_seed, instance) for instance in range(n[i])] )
+		# 	p.close()
+		# 	p.join()
+		# for j in range(n[i]):
+		# 	filename = f'{j + initial_seed}_avg_balance.csv'
+		# 	file = open(filename, 'r')
+		# 	final_entry = (file.readlines()[-1]).split(',')
+		# 	file.close()
+		# 	profit_entry = {}
+		# 	for k in range(0, len(final_entry)-2, 2):
+		# 		col_name = final_entry[k].strip()
+		# 		col_val = final_entry[k+1]
+		# 		profit_entry[col_name] = float(col_val.strip())
+		# 	entry_df = pd.DataFrame([profit_entry])
+		# 	profits = pd.concat([profits, entry_df], ignore_index=True)
+		profits = create_threads(market_args, initial_seed, n[i])
+		summary_entry = {'n' : n[i], 'Trader ratio:' : ':'.join(str(r) for r in r_vals)}
+		summary_entry = run_stats(n, profits, summary_entry)
+		summmary_entry_df = pd.DataFrame([summary_entry])
+		stat_summary = pd.concat([stat_summary, summmary_entry_df], ignore_index=True)
+		sns.kdeplot(data=profits, fill=False, ax=axes[i, 0])
+		sns.boxplot(data=profits, ax=axes[i, 1])
+	return stat_summary
+	
 	
 def part_d1(n, market_args, initial_seed):
 	
@@ -122,8 +220,8 @@ def part_d1(n, market_args, initial_seed):
 		file = open(filename, 'r')
 		lines = file.readlines()
 		file.close()
-		start_entry = np.average([float(value.split(',')[0].strip()) for value in lines[:5]])
-		end_entry = np.average([float(value.split(',')[0].strip()) for value in lines[-5:]])
+		start_entry = np.average([float(value.split(',')[15].strip()) for value in lines[:5]])
+		end_entry = np.average([float(value.split(',')[15].strip()) for value in lines[-5:]])
 		pps_entry = pd.DataFrame({'start': [start_entry], 'end': [end_entry]})
 		
 		pps = pd.concat([pps, pps_entry], ignore_index=True)
