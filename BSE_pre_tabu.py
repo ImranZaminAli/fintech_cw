@@ -1345,16 +1345,6 @@ class Trader_ZIP(Trader):
                 elif mut_val < min:
                     mut_val = min
             return mut_val
-        
-        def check_unique(new_strat):
-            tabu_tolerance = {'m_buy': 0.025/2, 'm_sell':  0.025/2, 'beta': 0.025/2, 'momntm' : 0.025/2, 'ca' : 0.0025/2, 'cr' : 0.0025/2}
-            for old_strat in self.tabu_list:
-                #diff = []
-                for key in old_strat:
-                    diff = abs(old_strat[key] - new_strat[key])
-                    if diff < tabu_tolerance[key]:
-                        return False
-            return True
 
         # mutate each element of a ZIP strategy independently
         # and clip each to remain within bounds
@@ -1368,23 +1358,6 @@ class Trader_ZIP(Trader):
             ca = gauss_mutate_clip(s['ca'], small_sdev, 0.0, 1.0)
             cr = gauss_mutate_clip(s['cr'], small_sdev, 0.0, 1.0)
             new_strat = {'m_buy': margin_buy, 'm_sell': margin_sell, 'beta': beta, 'momntm': momntm, 'ca': ca, 'cr': cr}
-        elif mode == 'tabu':
-            unique = False
-            counter = 0
-            while not unique:
-                big_sdev = 0.025
-                small_sdev = 0.0025
-                margin_buy = gauss_mutate_clip(s['m_buy'], big_sdev, -1.0, 0)
-                margin_sell = gauss_mutate_clip(s['m_sell'], big_sdev, 0.0, 1.0)
-                beta = gauss_mutate_clip(s['beta'], big_sdev, 0.0, 1.0)
-                momntm = gauss_mutate_clip(s['momntm'], big_sdev, 0.0, 1.0)
-                ca = gauss_mutate_clip(s['ca'], small_sdev, 0.0, 1.0)
-                cr = gauss_mutate_clip(s['cr'], small_sdev, 0.0, 1.0)
-                new_strat = {'m_buy': margin_buy, 'm_sell': margin_sell, 'beta': beta, 'momntm': momntm, 'ca': ca, 'cr': cr}
-                unique = check_unique(new_strat)
-                counter += 1
-                if counter > 10:
-                    print('STUCK')
         else:
             sys.exit('FAIL: bad mode in mutate_strat')
         return new_strat
@@ -1474,8 +1447,6 @@ class Trader_ZIP(Trader):
         self.last_strat_change_time = time  # what time did we last change strategies?
         self.active_strat = 0       # which of the k strategies are we currently playing? -- start with 0
         self.profit_epsilon = 0.0 * random.random()     # min profit-per-sec difference between strategies that counts
-        self.tabu_list = []
-        self.max_tabu_len = 8
 
         verbose = False
 
@@ -1603,7 +1574,7 @@ class Trader_ZIP(Trader):
         # snapshot says whether the caller of respond() should print next frame of system snapshot data
         snapshot = False
 
-        if self.optmzr == 'ZIPSH' or self.optmzr == 'ZIPTS':
+        if self.optmzr == 'ZIPSH':
 
             # ZIP with simple-stochastic-hillclimber optimization of strategy (hyperparameter values)
 
@@ -1654,12 +1625,7 @@ class Trader_ZIP(Trader):
 
                 # now replicate and mutate the elite into all the other strats
                 for s in range(1, self.k):  # note range index starts at one not zero (elite is at [0])
-                    mode = 'gauss' if self.optmzr == 'ZIPSH' else 'tabu'
-                    new_strat = self.mutate_strat(self.strats[0]['stratvec'], mode)
-                    if len(self.tabu_list) == self.max_tabu_len:
-                        self.tabu_list.pop(0)
-                        self.tabu_list.append(new_strat)
-                    self.strats[s]['stratvec'] = new_strat
+                    self.strats[s]['stratvec'] = self.mutate_strat(self.strats[0]['stratvec'], 'gauss')
                     strat_activate(time, s)
 
                 # and then update (wipe) records for the elite
@@ -1903,8 +1869,6 @@ def populate_market(traders_spec, traders, shuffle, verbose):
             return Trader_ZIP('ZIP', name, balance, parameters, time0)
         elif robottype == 'ZIPSH':
             return Trader_ZIP('ZIPSH', name, balance, parameters, time0)
-        elif robottype == 'ZIPTS':
-            return Trader_ZIP('ZIPTS', name, balance, parameters, time0)
         elif robottype == 'PRZI':
             return Trader_PRZI('PRZI', name, balance, parameters, time0)
         elif robottype == 'PRSH':
@@ -2226,7 +2190,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
             trader = trdrs[t]
 
             # print('PRSH/PRDE/ZIPSH strategy recording, t=%s' % trader)
-            if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS':
+            if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH':
                 #line_str += 'id=,%s, %s,' % (trader.tid, trader.ttype)
 
                 if trader.ttype == 'ZIPSH':
