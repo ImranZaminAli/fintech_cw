@@ -29,21 +29,21 @@ stat_summary = pd.DataFrame()
 # sns.boxplot(data=pps, ax=axes[1])
 # plt.show()
 
-# for i in range(n):
-pps = pd.DataFrame()
-filename = f'{initial_seed + 13}_strats.csv'
-file = open(filename, 'r')
-lines = file.readlines()
-file.close()
-y = 'mbuy'
-for j in range(len(lines)):
-    line = lines[j].split(',')
-    entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[4].strip())]}
-    entry = pd.DataFrame(entry)
-    pps = pd.concat([pps, entry], ignore_index=True)
+for i in range(n):
+    pps = pd.DataFrame()
+    filename = os.path.join('d1', f'{initial_seed + i}_strats.csv')
+    file = open(filename, 'r')
+    lines = file.readlines()
+    file.close()
+    y = 'mbuy'
+    for j in range(len(lines)):
+        line = lines[j].split(',')
+        entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[15].strip())]}
+        entry = pd.DataFrame(entry)
+        pps = pd.concat([pps, entry], ignore_index=True)
 
-pps.plot.scatter(x='t / simulated seconds', y=y)
-#print(i)
-plt.show()
+    pps.plot.scatter(x='t / simulated seconds', y=y)
+    #print(i)
+    plt.show()
 
 # initial seed of 13
