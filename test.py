@@ -7,13 +7,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 n = 60
 initial_seed = 100
-# pps = pd.DataFrame()
-# stat_summary = pd.DataFrame()
-# filename = f'{initial_seed + 0}_strats.csv'
-# file = open(filename, 'r')
-# lines = file.readlines()
-# file.close()
-# print(np.average([float(value.split(',')[15].strip()) for value in lines[-5:]]))
+pps = pd.DataFrame()
+stat_summary = pd.DataFrame()
+filename = f'{initial_seed + 0}_strats.csv'
+file = open(filename, 'r')
+lines = file.readlines()
+file.close()
+
+#print(np.average([float(value.split(',')[15].strip()) for value in lines[-5:]]))
 # for i in range(n):
 #     start_entry = []
 #     end_entry = []
@@ -22,6 +23,12 @@ initial_seed = 100
 #     file = open(filename, 'r')
 #     lines = file.readlines()
 #     file.close()
+#     for value in lines[-5:]:
+#         parts = value.split(',')
+#         if len(lines) >= 5:
+#             print(np.average([float(value.split(',')[15].strip()) for value in lines[-5:]]))
+#         if len(parts) >= 16:
+#             print(float(parts[15].strip()))
 #     start_entry = np.average([float(value.split(',')[15].strip()) for value in lines[:5]])
 #     end_entry = np.average([float(value.split(',')[15].strip()) for value in lines[-5:]])
 #     pps_entry = pd.DataFrame({'start': [start_entry], 'end': [end_entry]})
@@ -35,34 +42,38 @@ initial_seed = 100
 # summary_entry = run_stats(pps, {})
 # summary_entry = pd.DataFrame([summary_entry])
 # stat_summary = pd.concat([stat_summary, summary_entry], ignore_index=True)
-# for i in range(20):
-#     pps = pd.DataFrame()
-#     fig, ax = plt.subplots(1,2, sharey=True)
-#     #filename = os.path.join('d1', f'{initial_seed + 1}_strats.csv')
-#     filename = f'{initial_seed + i}_strats.csv'
-#     file = open(filename, 'r')
-#     lines = file.readlines()
-#     file.close()
-#     y = 'mbuy'
-#     for j in range(len(lines)):
-#         line = lines[j].split(',')
-#         entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[15].strip())]}
-#         entry = pd.DataFrame(entry)
-#         pps = pd.concat([pps, entry], ignore_index=True)
-#     pps.plot.scatter(x='t / simulated seconds', y=y, ax = ax[0])
-#     pps1 = pd.DataFrame()
-#     filename = os.path.join('tabu', f'{initial_seed + 1}_strats.csv')
-#     file = open(filename, 'r')
-#     lines = file.readlines()
-#     file.close()
-#     for j in range(len(lines)):
-#         line = lines[j].split(',')
-#         entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[15].strip())]}
-#         entry = pd.DataFrame(entry)
-#         pps1 = pd.concat([pps1, entry], ignore_index=True)
-#     pps1.plot.scatter(x='t / simulated seconds', y=y, ax = ax[1])
-#     #print(i)
-#     plt.show()
+for i in range(n):
+    pps = pd.DataFrame()
+    fig, ax = plt.subplots(1,2, sharey=True)
+    #filename = os.path.join('d1', f'{initial_seed + 1}_strats.csv')
+    filename = f'{initial_seed + i}_strats.csv'
+    file = open(filename, 'r')
+    lines = file.readlines()
+    file.close()
+    print(len(lines))
+    print(len(lines[0]))
+    break
+    # for line in lines.split(','): 
+    #     print(line)
+    # for j in range(len(lines)):
+    #     line = lines[j].split(',')
+    #     entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[15].strip())]}
+    #     entry = pd.DataFrame(entry)
+    #     pps = pd.concat([pps, entry], ignore_index=True)
+    # pps.plot.scatter(x='t / simulated seconds', y=y, ax = ax[0])
+    # pps1 = pd.DataFrame()
+    # filename = os.path.join(f'{initial_seed + 1}_strats.csv')
+    # file = open(filename, 'r')
+    # lines = file.readlines()
+    # file.close()
+    # for j in range(len(lines)):
+    #     line = lines[j].split(',')
+    #     entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[15].strip())]}
+    #     entry = pd.DataFrame(entry)
+    #     pps1 = pd.concat([pps1, entry], ignore_index=True)
+    # pps1.plot.scatter(x='t / simulated seconds', y=y, ax = ax[1])
+    #print(i)
+    #plt.show()
 
 # initial seed of 13
 # pps = pd.DataFrame()
@@ -109,20 +120,32 @@ initial_seed = 100
 # plt.show()
 # print(run_stats(pps, {}))
 
-pps = pd.DataFrame()
-for i in range(n):
-    entry = {}
-    filename = f'{initial_seed + i}_strats.csv'
-    file = open(filename, 'r')
-    lines = file.readlines()
-    print(len(lines[0]))
-    file.close()
-    init_lines = lines[5:]
-    ave = []
-    for init in init_lines:
-        pps_str = init.split(',')[15]
-        pps_val = float(pps.str.strip())
-        ave.append(pps_val)
+# pps = pd.DataFrame()
+# for i in range(n):
+#     entry = {}
+#     filename = f'{initial_seed + i}_strats.csv'
+#     file = open(filename, 'r')
+#     lines = file.readlines()
+#     print(len(lines[0]))
+#     file.close()
+#     init_lines = lines[:5]
+#     ave = []
+#     for init in init_lines:
+#         pps_str = init.split(',')[15]
+#         pps_val = float(pps.str.strip())
+#         ave.append(pps_val)
+#     ave = np.average(ave)
+#     initial = ave
+#     init_lines = lines[-5:]
+#     ave = []
+#     for init in init_lines:
+#         pps_str = init.split(',')[15]
+#         pps_val = float(pps.str.strip())
+#         ave.append(pps_val)
+#     ave = np.average(ave)
+#     final = ave
+#     # entry = 
+    
 
 
     #entry['initial'] = [np.average([float(x.split(',')[15].strip()) for x in lines[5:]])]

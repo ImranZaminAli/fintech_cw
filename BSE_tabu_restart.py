@@ -1382,7 +1382,6 @@ class Trader_ZIP(Trader):
                         matched = matched and (diff < strat_tolerance[key])
                     if matched:
                         collision_count += 1
-                        print(f'collision {collision_count}')
                         unique = False
                         break
                         
@@ -1910,7 +1909,6 @@ def populate_market(traders_spec, traders, shuffle, verbose):
         elif robottype == 'ZIPSH':
             return Trader_ZIP('ZIPSH', name, balance, parameters, time0)
         elif robottype == 'ZIPTS':
-            print('ZIPTS')
             return Trader_ZIP('ZIPTS', name, balance, params, time0)
         elif robottype == 'PRZI':
             return Trader_PRZI('PRZI', name, balance, parameters, time0)
@@ -2235,7 +2233,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
             trader = trdrs[t]
 
             # print('PRSH/PRDE/ZIPSH strategy recording, t=%s' % trader)
-            if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH':
+            if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS':
                 #line_str += 'id=,%s, %s,' % (trader.tid, trader.ttype)
 
                 if trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS':
