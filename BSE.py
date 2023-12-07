@@ -1346,22 +1346,48 @@ class Trader_ZIP(Trader):
                     mut_val = min
             return mut_val
         
-        def check_unique(new_strat):
-            tabu_tolerance = {'m_buy': 0.025/2, 'm_sell':  0.025/2, 'beta': 0.025/2, 'momntm' : 0.025/2, 'ca' : 0.0025/2, 'cr' : 0.0025/2}
-            for old_strat in self.tabu_list:
-                #diff = []
-                for key in old_strat:
-                    diff = abs(old_strat[key] - new_strat[key])
+        def gauss_mutate_clip_tabu(value, sdev):
+            return value + random.gauss(0.0, sdev)
+        
+        # def check_unique(new_strat):
+        #     print(f'checking unique', flush=True)
+        #     tabu_tolerance = {'m_buy': 0.025/4, 'm_sell':  0.025/4, 'beta': 0.025/4, 'momntm' : 0.025/4, 'ca' : 0.0025/4, 'cr' : 0.0025/4}
+        #     for old_strat in self.tabu_list:
+        #         #diff = []
+        #         if all(abs(old_strat[key] - new_strat[key]) < tabu_tolerance[key] for key in old_strat):
+        #             return False
+        #     return True
+
+
+        def get_unique(key, sdev, min, max):
+            tabu_tolerance = {'m_buy': 0.025, 'm_sell':  0.025, 'beta': 0.025, 'momntm' : 0.025, 'ca' : 0.0025, 'cr' : 0.0025}
+            found = False
+            counter = 0
+            while not found:
+                unique = True
+                new_param =  gauss_mutate_clip(s[key], sdev, min,max)
+                for old_strat in self.tabu_list:
+                    diff = abs(old_strat[key] - s[key])
+                    print(f'{key}: {new_param}, {old_strat[key]}, diff: {diff}, tolerance: {tabu_tolerance[key]}')
                     if diff < tabu_tolerance[key]:
-                        return False
-            return True
+                        unique = True
+                    else:
+                        random.seed(counter)
+                        print('\n\n\n\ncollision\n\n\n\n')
+                        unique = False
+                        break
+                found = unique
+                if not found:
+                    counter += 1
+                    print(f'stuck {counter} {key}', flush=True)
+            return new_param
 
         # mutate each element of a ZIP strategy independently
         # and clip each to remain within bounds
         if mode == 'gauss':
             big_sdev = 0.025
             small_sdev = 0.0025
-            margin_buy = gauss_mutate_clip(s['m_buy'], big_sdev, -1.0, 0)
+            margin_buy = gauss_mutate_clip(s['m_buy'], big_sdev * 2, -1.0, 0)
             margin_sell = gauss_mutate_clip(s['m_sell'], big_sdev, 0.0, 1.0)
             beta = gauss_mutate_clip(s['beta'], big_sdev, 0.0, 1.0)
             momntm = gauss_mutate_clip(s['momntm'], big_sdev, 0.0, 1.0)
@@ -1369,23 +1395,28 @@ class Trader_ZIP(Trader):
             cr = gauss_mutate_clip(s['cr'], small_sdev, 0.0, 1.0)
             new_strat = {'m_buy': margin_buy, 'm_sell': margin_sell, 'beta': beta, 'momntm': momntm, 'ca': ca, 'cr': cr}
         elif mode == 'tabu':
-            unique = False
-            counter = 0
-            while not unique:
-                big_sdev = 0.025
-                small_sdev = 0.0025
-                margin_buy = gauss_mutate_clip(s['m_buy'], big_sdev, -1.0, 0)
-                margin_sell = gauss_mutate_clip(s['m_sell'], big_sdev, 0.0, 1.0)
-                beta = gauss_mutate_clip(s['beta'], big_sdev, 0.0, 1.0)
-                momntm = gauss_mutate_clip(s['momntm'], big_sdev, 0.0, 1.0)
-                ca = gauss_mutate_clip(s['ca'], small_sdev, 0.0, 1.0)
-                cr = gauss_mutate_clip(s['cr'], small_sdev, 0.0, 1.0)
-                new_strat = {'m_buy': margin_buy, 'm_sell': margin_sell, 'beta': beta, 'momntm': momntm, 'ca': ca, 'cr': cr}
-                unique = check_unique(new_strat)
-                counter += 1
-                if counter > 10:
-                    print('STUCK')
+            big_sdev = 0.025
+            small_sdev = 0.0025
+            # margin_buy = gauss_mutate_clip(s['m_buy'], big_sdev, -1.0, 0)
+            # margin_sell = gauss_mutate_clip(s['m_sell'], big_sdev, 0.0, 1.0)
+            # beta = gauss_mutate_clip(s['beta'], big_sdev, 0.0, 1.0)
+            # momntm = gauss_mutate_clip(s['momntm'], big_sdev, 0.0, 1.0)
+            # ca = gauss_mutate_clip(s['ca'], small_sdev, 0.0, 1.0)
+            # cr = gauss_mutate_clip(s['cr'], small_sdev, 0.0, 1.0)
+            # new_strat = {'m_buy': margin_buy, 'm_sell': margin_sell, 'beta': beta, 'momntm': momntm, 'ca': ca, 'cr': cr}
+            # unique = check_unique(new_strat)
+            # counter += 1
+            # if not unique:
+            #     print(f'STUCK {counter}', flush=True)
+            margin_buy = get_unique('m_buy', big_sdev, -1.0, 0)
+            margin_sell = s['m_sell']
+            beta = get_unique('beta', big_sdev, 0.0, 1.0)
+            momntm = get_unique('momntm', big_sdev, 0.0, 1.0)
+            ca = get_unique('ca', small_sdev, 0.0, 1.0)
+            cr = get_unique('cr', small_sdev, 0.0, 1.0)
+            new_strat = {'m_buy': margin_buy, 'm_sell': margin_sell, 'beta': beta, 'momntm': momntm, 'ca': ca, 'cr': cr}
         else:
+            print('BREAK', flush=True)
             sys.exit('FAIL: bad mode in mutate_strat')
         return new_strat
 
@@ -1444,6 +1475,7 @@ class Trader_ZIP(Trader):
                 logfilename = params['logfile'] + '_' + tid + '_log.csv'
                 self.logfile = open(logfilename, 'w')
 
+
         # the following set of variables are needed for original ZIP *and* for its optimizing extensions e.g. ZIPSH
         self.logging = logging
         self.willing = 1
@@ -1475,7 +1507,7 @@ class Trader_ZIP(Trader):
         self.active_strat = 0       # which of the k strategies are we currently playing? -- start with 0
         self.profit_epsilon = 0.0 * random.random()     # min profit-per-sec difference between strategies that counts
         self.tabu_list = []
-        self.max_tabu_len = 8
+        self.max_tabu_len = 15
 
         verbose = False
 
@@ -1598,13 +1630,12 @@ class Trader_ZIP(Trader):
             self.strats[s_index]['active'] = True
             self.strats[s_index]['profit'] = 0.0
             self.strats[s_index]['pps'] = 0.0
-            self.strats[s]['evaluated'] = False
+            self.strats[s_index]['evaluated'] = False
 
         # snapshot says whether the caller of respond() should print next frame of system snapshot data
         snapshot = False
 
         if self.optmzr == 'ZIPSH' or self.optmzr == 'ZIPTS':
-
             # ZIP with simple-stochastic-hillclimber optimization of strategy (hyperparameter values)
 
             # NB this *cycles* through the available strats in sequence (i.e., it doesn't shuffle them)
@@ -1653,15 +1684,20 @@ class Trader_ZIP(Trader):
                 # at this stage, strats[0] is our newly-chosen elite-strat, about to replicate & mutate
 
                 # now replicate and mutate the elite into all the other strats
-                for s in range(1, self.k):  # note range index starts at one not zero (elite is at [0])
-                    mode = 'gauss' if self.optmzr == 'ZIPSH' else 'tabu'
-                    new_strat = self.mutate_strat(self.strats[0]['stratvec'], mode)
-                    if len(self.tabu_list) == self.max_tabu_len:
-                        self.tabu_list.pop(0)
-                        self.tabu_list.append(new_strat)
-                    self.strats[s]['stratvec'] = new_strat
-                    strat_activate(time, s)
+                if self.optmzr == 'ZIPSH':
 
+                    print('here2', flush=True)
+                    for s in range(1, self.k):  # note range index starts at one not zero (elite is at [0])
+                        self.strats[s]['stratvec'] = self.mutate_strat(self.strats[0]['stratvec'], 'gauss')
+                        strat_activate(time, s)
+                else:
+                    for s in range(1, self.k):
+                        new_strat = self.mutate_strat(self.strats[0]['stratvec'], 'tabu')
+                        if len(self.tabu_list) == self.max_tabu_len:
+                            self.tabu_list.pop(0)
+                        self.tabu_list.append(new_strat)
+                        self.strats[s]['stratvec'] = new_strat
+                        strat_activate(time, s)
                 # and then update (wipe) records for the elite
                 strat_activate(time, 0)
 
@@ -1680,7 +1716,6 @@ class Trader_ZIP(Trader):
 
             else:
                 # we're still evaluating
-
                 s = self.active_strat
                 time_elapsed = time - self.strats[s]['start_t']
                 if time_elapsed >= self.strat_wait_time:
@@ -1902,6 +1937,7 @@ def populate_market(traders_spec, traders, shuffle, verbose):
         elif robottype == 'ZIP':
             return Trader_ZIP('ZIP', name, balance, parameters, time0)
         elif robottype == 'ZIPSH':
+            print(f'params: {parameters}')
             return Trader_ZIP('ZIPSH', name, balance, parameters, time0)
         elif robottype == 'ZIPTS':
             return Trader_ZIP('ZIPTS', name, balance, parameters, time0)
@@ -1929,7 +1965,7 @@ def populate_market(traders_spec, traders, shuffle, verbose):
     def unpack_params(trader_params, mapping):
         # unpack the parameters for those trader-types that have them
         parameters = None
-        if ttype == 'ZIPSH' or ttype == 'ZIP':
+        if ttype == 'ZIPSH' or ttype == 'ZIP' or ttype == 'ZIPTS':
             # parameters matter...
             if mapping:
                 parameters = 'landscape-mapper'
@@ -1938,6 +1974,8 @@ def populate_market(traders_spec, traders, shuffle, verbose):
                 # trader-type determines type of optimizer used
                 if ttype == 'ZIPSH':
                     parameters['optimizer'] = 'ZIPSH'
+                elif ttype == 'ZIPTS':
+                    parameters['optimizer'] = 'ZIPTS'
                 else:   # ttype=ZIP
                     parameters['optimizer'] = None
         if ttype == 'PRSH' or ttype == 'PRDE' or ttype == 'PRZI':
@@ -2228,8 +2266,7 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
             # print('PRSH/PRDE/ZIPSH strategy recording, t=%s' % trader)
             if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS':
                 #line_str += 'id=,%s, %s,' % (trader.tid, trader.ttype)
-
-                if trader.ttype == 'ZIPSH':
+                if trader.ttype == 'ZIPSH' or 'ZIPTS':
                     # we know that ZIPSH sorts the set of strats into best-first
                     act_strat = trader.strats[0]['stratvec']
                     act_prof = trader.strats[0]['pps']
@@ -2418,6 +2455,42 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
 
 
 if __name__ == "__main__":
+
+
+
+    sup_range = (50, 75)
+    dem_range = (150, 125)
+    num_buyers = 10
+    num_sellers = 10
+    buyers = [('ZIC', 9), ('ZIPSH', 1,{'optimizer': 'ZIPSH', 'k': 4})]
+    sellers = [('ZIC', 10)]
+    traders_specs = {'sellers': sellers, 'buyers': buyers}
+    start_time = 0
+    end_time = 60 * 60 * 24 * 30
+    supply_schedule = [{'from': start_time, 'to': end_time, 'ranges': [sup_range], 'stepmode': 'fixed'}]
+    demand_schedule = [{'from': start_time, 'to': end_time, 'ranges': [dem_range], 'stepmode': 'fixed'}]
+    order_interval = 15
+    order_sched = {'sup': supply_schedule, 'dem': demand_schedule,
+                'interval': order_interval, 'timemode': 'periodic'}
+    dump_flags = {'dump_blotters': False, 'dump_lobs': False, 'dump_strats': True,
+                'dump_avgbals': False, 'dump_tape': False}
+    verbose = False
+    initial_seed = 100
+
+    buyers = [('ZIC', 9), ('ZIPTS', 1,{'optimizer': 'ZIPTS', 'k': 4})]
+    sellers = [('ZIC', 10)]
+    end_time = 60 * 60 * 24 * 2
+    traders_specs = {'sellers': sellers, 'buyers': buyers}
+    supply_schedule = [{'from': start_time, 'to': end_time, 'ranges': [sup_range], 'stepmode': 'fixed'}]
+    demand_schedule = [{'from': start_time, 'to': end_time, 'ranges': [dem_range], 'stepmode': 'fixed'}]
+    order_interval = 15
+    order_sched = {'sup': supply_schedule, 'dem': demand_schedule,
+                'interval': order_interval, 'timemode': 'periodic'}
+    
+    random.seed(initial_seed)
+    market_session(str(initial_seed), start_time, end_time, traders_specs, order_sched, dump_flags, False)
+
+
 
     # set up common parameters for all market sessions
     # 1000 days is good, but 3*365=1095, so may as well go for three years.

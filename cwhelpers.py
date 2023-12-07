@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import random
 import pingouin as pg
 import statsmodels
-from BSE import market_session
+from BSE_tabu_restart import market_session
 from os import cpu_count
 import numpy as np
 from multiprocessing import Pool
@@ -258,12 +258,14 @@ def part_d1(n, market_args, initial_seed):
         
         pps = pd.concat([pps, pps_entry], ignore_index=True)
     
-    summary_entry = run_stats(pps, {})
-    summary_entry = pd.DataFrame([summary_entry])
-    stat_summary = pd.concat([stat_summary, summary_entry], ignore_index=True)
     fig, axes = plt.subplots(1,2)
     sns.kdeplot(data=pps, fill=False, ax=axes[0])
     sns.boxplot(data=pps, ax=axes[1])
+    plt.show()
+    summary_entry = run_stats(pps, {})
+    summary_entry = pd.DataFrame([summary_entry])
+    stat_summary = pd.concat([stat_summary, summary_entry], ignore_index=True)
+    
     return stat_summary
 
 
