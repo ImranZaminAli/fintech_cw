@@ -1475,11 +1475,14 @@ class Trader_ZIP(Trader):
         self.last_strat_change_time = time  # what time did we last change strategies?
         self.active_strat = 0       # which of the k strategies are we currently playing? -- start with 0
         self.profit_epsilon = 0.0 * random.random()     # min profit-per-sec difference between strategies that counts
-
+        
         verbose = False
 
         self.tabu_list = []
         self.max_tabu = 20
+        self.ttype = ttype
+        print(self.ttype)
+        self.elite_strat = {}
 
         if self.optmzr is not None and k > 1:
             # we're doing some form of k-armed strategy-optimization with multiple strategies
@@ -1489,6 +1492,8 @@ class Trader_ZIP(Trader):
                         'momntm': self.momntm, 'ca': self.ca, 'cr': self.cr}
             self.strats.append({'stratvec': strategy, 'start_t': time, 'active': True,
                                 'profit': 0, 'pps': 0, 'evaluated': False})
+            
+            self.elite_strat = self.strats[0]
 
             # rest of *initial* strategy set is generated from same distributions, but these are all inactive
             for s in range(1, k):
@@ -1652,6 +1657,7 @@ class Trader_ZIP(Trader):
                         self.strats[0] = self.strats[1]
                         self.strats[1] = tmp_strat
 
+
                 # at this stage, strats[0] is our newly-chosen elite-strat, about to replicate & mutate
 
                 # now replicate and mutate the elite into all the other strats
@@ -1707,6 +1713,15 @@ class Trader_ZIP(Trader):
 
                         # signal that we want to record a system snapshot because this trader's eval loop finished
                         snapshot = True
+
+                        prof_diff = self.elite_strat['pps'] - self.strats[0]['pps']
+                        if prof_diff < 0:
+                            self.elite_strat = self.strats[0].copy()
+                        if self.ttype == 'ZIPTSH' and self.optmzr == 'ZIPTS' and time > 0.7 * 60*60*24*30:
+                            print('swapped', flush=True)
+                            self.optmzr = 'ZIPSH'
+                            self.strats[0] = self.elite_strat.copy()
+
 
                         # NB not updating self.active_strat here because next call to respond() generates new popln
 
@@ -1910,6 +1925,8 @@ def populate_market(traders_spec, traders, shuffle, verbose):
             return Trader_ZIP('ZIPSH', name, balance, parameters, time0)
         elif robottype == 'ZIPTS':
             return Trader_ZIP('ZIPTS', name, balance, params, time0)
+        elif robottype == 'ZIPTSH':
+            return Trader_ZIP('ZIPTSH', name, balance, parameters, time0)
         elif robottype == 'PRZI':
             return Trader_PRZI('PRZI', name, balance, parameters, time0)
         elif robottype == 'PRSH':
@@ -1934,7 +1951,7 @@ def populate_market(traders_spec, traders, shuffle, verbose):
     def unpack_params(trader_params, mapping):
         # unpack the parameters for those trader-types that have them
         parameters = None
-        if ttype == 'ZIPSH' or ttype == 'ZIP' or ttype == 'ZIPTS':
+        if ttype == 'ZIPSH' or ttype == 'ZIP' or ttype == 'ZIPTS' or ttype == 'ZIPTSH':
             # parameters matter...
             if mapping:
                 parameters = 'landscape-mapper'
@@ -1944,6 +1961,9 @@ def populate_market(traders_spec, traders, shuffle, verbose):
                 if ttype == 'ZIPSH':
                     parameters['optimizer'] = 'ZIPSH'
                 elif ttype == 'ZIPTS':
+                    parameters['optimizer'] = 'ZIPTS'
+                elif ttype == 'ZIPTSH':
+                    print('setting to zipts', flush=True)
                     parameters['optimizer'] = 'ZIPTS'
                 else:   # ttype=ZIP
                     parameters['optimizer'] = None
@@ -2233,10 +2253,10 @@ def market_session(sess_id, starttime, endtime, trader_spec, order_schedule, dum
             trader = trdrs[t]
 
             # print('PRSH/PRDE/ZIPSH strategy recording, t=%s' % trader)
-            if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS':
+            if trader.ttype == 'PRSH' or trader.ttype == 'PRDE' or trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS' or trader.ttype == 'ZIPTSH':
                 #line_str += 'id=,%s, %s,' % (trader.tid, trader.ttype)
 
-                if trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS':
+                if trader.ttype == 'ZIPSH' or trader.ttype == 'ZIPTS' or trader.ttype == 'ZIPTSH':
                     # we know that ZIPSH sorts the set of strats into best-first
                     act_strat = trader.strats[0]['stratvec']
                     act_prof = trader.strats[0]['pps']
