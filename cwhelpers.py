@@ -103,6 +103,8 @@ def run_stats(df : pd.DataFrame, summary_entry):
         _, pvalue = stats.shapiro(df[col])
         if pvalue < 0.05:
             is_normal = False
+        summary_entry[f'{col} mean'] = df[col].mean()
+        summary_entry[f'{col} std'] = df[col].std()
         summary_entry[f'{col} normality'] = pvalue
 
     summary_entry['All normal'] = is_normal
@@ -186,6 +188,8 @@ def part_a(n, market_args, initial_seed, r_vals):
         stat_summary = pd.concat([stat_summary, summmary_entry], ignore_index=True)
         sns.kdeplot(data=profits, fill=False, ax=axes[i, 0])
         sns.boxplot(data=profits, ax=axes[i, 1])
+
+        axes[i, 1].set_ylabel("Profits")
     return stat_summary
 
 def part_b(n, market_args, r_list, algos, initial_seed):
