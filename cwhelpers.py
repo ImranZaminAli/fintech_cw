@@ -5,7 +5,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import random
 import pingouin as pg
-import statsmodels
 from BSE_old import market_session
 from os import cpu_count
 import numpy as np
@@ -113,13 +112,14 @@ def post_hoc(df, summary_entry, is_normal):
     return pd.DataFrame([summary_entry])
 
 def run_stats(df : pd.DataFrame, summary_entry):
-    is_normal = True
-    for col in df.columns:
-        _, pvalue = stats.shapiro(df[col])
-        if pvalue < 0.05:
-            is_normal = False
-        summary_entry[f'{col} mean'] = df[col].mean()
-        summary_entry[f'{col} std'] = df[col].std()
+    # for col in df.columns:
+    #     _, pvalue = stats.shapiro(df[col])
+    #     if pvalue < 0.05:
+    #         is_normal = False
+    #     summary_entry[f'{col} mean'] = df[col].mean()
+    #     summary_entry[f'{col} std'] = df[col].std()
+    num_samples = len(df.iloc[:, 0])
+    _, _, is_normal = pg.normality(df, method='shapiro' if num_samples <= 50 else 'normaltest')
 
     summary_entry['All normal'] = is_normal
     # check if comes from the same population
