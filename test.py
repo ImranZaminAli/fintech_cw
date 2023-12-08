@@ -148,36 +148,36 @@ plt.show()
 
 # for i in range(60):
 pps = pd.DataFrame()
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(1,3)
 #fig, ax = plt.subplots()
 
-# Define a list of colors
-colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'cyan', 'magenta']
 
-for i in range(10):
+
+# Define a list of colors
+colors = ['red', 'green', 'blue']
+dir = ['d1_100', 'tabu', 'hybrid']
+for i in range(3):  # Adjusted the loop range to match the number of subplots and colors
     # Create a new DataFrame for each iteration
     pps = pd.DataFrame()
 
-    #filename = os.path.join('d1', f'{initial_seed + 1}_strats.csv')
-    filename = f'tabu/{initial_seed + i}_strats.csv'
-    
+    filename = f'{dir[i]}/{initial_seed+5}_strats.csv'
+
     # Read the CSV file
     file = open(filename, 'r')
     lines = file.readlines()
     file.close()
-    
+
     # Process the data and append it to the DataFrame
-    for j in range(80):
+    for j in range(len(lines)):
         line = lines[j].split(',')
         entry = {'t / days': [float(line[1].strip())], 'pps': [float(line[15].strip()) / (60 * 60 * 24)]}
         entry = pd.DataFrame(entry)
         pps = pd.concat([pps, entry], ignore_index=True)
 
     # Plot the data with a specified color
-    pps.plot.scatter(x='t / days', y='pps', ax=ax, c=colors[i], label=f'Data {i}')
+    pps.plot.scatter(x='t / days', y='pps', ax=ax[i], c=colors[i], label=f'Data {i}')
 
 # Show the legend to differentiate between the scatter plots
-ax.legend()
-
+ax[0].legend()
 # Show the plot
 plt.show()
