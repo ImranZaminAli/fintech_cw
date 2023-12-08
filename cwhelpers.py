@@ -5,7 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import random
 import pingouin as pg
-from BSE_old import market_session
+from BSE_tabu_restart import market_session
 from os import cpu_count
 import numpy as np
 from multiprocessing import Pool
