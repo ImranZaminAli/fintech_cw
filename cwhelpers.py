@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import random
 import pingouin as pg
 import statsmodels
-from BSE_tabu_restart import market_session
+from BSE_old import market_session
 from os import cpu_count
 import numpy as np
 from multiprocessing import Pool
@@ -95,7 +95,22 @@ def run_stat_tests(profits):
         indexes = [i for i in range(len(pairwise_tests)) if pairwise_tests['p-corr'][i] < 0.05]
         selected_rows = pairwise_tests.loc[indexes]
         result = list(zip(selected_rows['A'], selected_rows['B'], selected_rows['p-corr']))
-        print(result)
+        
+
+
+def post_hoc(df, summary_entry, is_normal):
+    # converting to long format
+    column_names = list(df.columns)
+    long=df.copy()
+    long['Experiment'] = range(len(long))
+    long = pd.melt(long, id_vars='Experiment', value_vars=column_names)
+
+    pairwise_tests = long.pairwise_tests(dv='value', within='variable', subject='Experiment', padjust='holm', parametric=is_normal)
+    indexes = [i for i in range(len(pairwise_tests)) if pairwise_tests['p-corr'][i] < 0.05]
+    selected_rows = pairwise_tests.loc[indexes]
+    for _, row in selected_rows.iterrows():
+        summary_entry[f'{row["A"]}, {row["B"]}'] = row['p-corr']
+    return pd.DataFrame([summary_entry])
 
 def run_stats(df : pd.DataFrame, summary_entry):
     is_normal = True
@@ -105,7 +120,6 @@ def run_stats(df : pd.DataFrame, summary_entry):
             is_normal = False
         summary_entry[f'{col} mean'] = df[col].mean()
         summary_entry[f'{col} std'] = df[col].std()
-        summary_entry[f'{col} normality'] = pvalue
 
     summary_entry['All normal'] = is_normal
     # check if comes from the same population
@@ -132,6 +146,9 @@ def run_stats(df : pd.DataFrame, summary_entry):
     summary_entry['Test Name'] = test_name
     summary_entry['P Value'] = pvalue
     summary_entry['Different populations'] = pvalue < 0.05
+    if further_test:
+        #summary_entry = pd.concat([summary_entry, post_hoc(df, summary_entry, is_normal)], ignore_index=True)
+        post_hoc(df, summary_entry, is_normal)
 
     return summary_entry
 
@@ -215,6 +232,7 @@ def part_b(n, market_args, r_list, algos, initial_seed):
     
 def part_c(n, market_args, r_vals, algos, initial_seed):
     stat_summary = pd.DataFrame()
+    further_tests = False
     fig, axes =  None, None
     if len(set(r_vals)) != 1:
         fig, axes = plt.subplots(2,2, figsize=(16,16))
