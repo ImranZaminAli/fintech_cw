@@ -7,12 +7,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 n = 60
 initial_seed = 100
-pps = pd.DataFrame()
-stat_summary = pd.DataFrame()
-filename = f'{initial_seed + 0}_strats.csv'
-file = open(filename, 'r')
-lines = file.readlines()
-file.close()
+# pps = pd.DataFrame()
+# stat_summary = pd.DataFrame()
+# filename = f'{initial_seed + 0}_strats.csv'
+# file = open(filename, 'r')
+# lines = file.readlines()
+# file.close()
 
 #print(np.average([float(value.split(',')[15].strip()) for value in lines[-5:]]))
 # for i in range(n):
@@ -42,25 +42,20 @@ file.close()
 # summary_entry = run_stats(pps, {})
 # summary_entry = pd.DataFrame([summary_entry])
 # stat_summary = pd.concat([stat_summary, summary_entry], ignore_index=True)
-for i in range(n):
-    pps = pd.DataFrame()
-    fig, ax = plt.subplots(1,2, sharey=True)
-    #filename = os.path.join('d1', f'{initial_seed + 1}_strats.csv')
-    filename = f'{initial_seed + i}_strats.csv'
-    file = open(filename, 'r')
-    lines = file.readlines()
-    file.close()
-    print(len(lines))
-    print(len(lines[0]))
-    break
-    # for line in lines.split(','): 
-    #     print(line)
-    # for j in range(len(lines)):
-    #     line = lines[j].split(',')
-    #     entry = {'t / simulated seconds' : [float(line[1].strip())], y : [float(line[15].strip())]}
-    #     entry = pd.DataFrame(entry)
-    #     pps = pd.concat([pps, entry], ignore_index=True)
-    # pps.plot.scatter(x='t / simulated seconds', y=y, ax = ax[0])
+# for i in range(10):
+#     pps = pd.DataFrame()
+    
+#     #filename = os.path.join('d1', f'{initial_seed + 1}_strats.csv')
+#     filename = f'd1/{initial_seed + i}_strats.csv'
+#     file = open(filename, 'r')
+#     lines = file.readlines()
+#     file.close()
+#     for j in range(len(lines)):
+#         line = lines[j].split(',')
+#         entry = {'t / simulated seconds' : [float(line[1].strip())], 'pps' : [float(line[15].strip())]}
+#         entry = pd.DataFrame(entry)
+#         pps = pd.concat([pps, entry], ignore_index=True)
+#     pps.plot.scatter(x='t / simulated seconds', y='pps', ax=ax)
     # pps1 = pd.DataFrame()
     # filename = os.path.join(f'{initial_seed + 1}_strats.csv')
     # file = open(filename, 'r')
@@ -72,8 +67,8 @@ for i in range(n):
     #     entry = pd.DataFrame(entry)
     #     pps1 = pd.concat([pps1, entry], ignore_index=True)
     # pps1.plot.scatter(x='t / simulated seconds', y=y, ax = ax[1])
-    #print(i)
-    #plt.show()
+    # print(i)
+plt.show()
 
 # initial seed of 13
 # pps = pd.DataFrame()
@@ -149,3 +144,40 @@ for i in range(n):
 
 
     #entry['initial'] = [np.average([float(x.split(',')[15].strip()) for x in lines[5:]])]
+
+
+# for i in range(60):
+pps = pd.DataFrame()
+fig, ax = plt.subplots()
+#fig, ax = plt.subplots()
+
+# Define a list of colors
+colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'cyan', 'magenta']
+
+for i in range(10):
+    # Create a new DataFrame for each iteration
+    pps = pd.DataFrame()
+
+    #filename = os.path.join('d1', f'{initial_seed + 1}_strats.csv')
+    filename = f'tabu/{initial_seed + i}_strats.csv'
+    
+    # Read the CSV file
+    file = open(filename, 'r')
+    lines = file.readlines()
+    file.close()
+    
+    # Process the data and append it to the DataFrame
+    for j in range(80):
+        line = lines[j].split(',')
+        entry = {'t / days': [float(line[1].strip())], 'pps': [float(line[15].strip()) / (60 * 60 * 24)]}
+        entry = pd.DataFrame(entry)
+        pps = pd.concat([pps, entry], ignore_index=True)
+
+    # Plot the data with a specified color
+    pps.plot.scatter(x='t / days', y='pps', ax=ax, c=colors[i], label=f'Data {i}')
+
+# Show the legend to differentiate between the scatter plots
+ax.legend()
+
+# Show the plot
+plt.show()
