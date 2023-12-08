@@ -1717,8 +1717,7 @@ class Trader_ZIP(Trader):
                         prof_diff = self.elite_strat['pps'] - self.strats[0]['pps']
                         if prof_diff < 0:
                             self.elite_strat = self.strats[0].copy()
-                        if self.ttype == 'ZIPTSH' and self.optmzr == 'ZIPTS' and time > 0.7 * 60*60*24*30:
-                            print('swapped', flush=True)
+                        if self.ttype == 'ZIPTSH' and self.optmzr == 'ZIPTS' and time > 0.7 * 60*60*24*80:
                             self.optmzr = 'ZIPSH'
                             self.strats[0] = self.elite_strat.copy()
 
@@ -1963,7 +1962,6 @@ def populate_market(traders_spec, traders, shuffle, verbose):
                 elif ttype == 'ZIPTS':
                     parameters['optimizer'] = 'ZIPTS'
                 elif ttype == 'ZIPTSH':
-                    print('setting to zipts', flush=True)
                     parameters['optimizer'] = 'ZIPTS'
                 else:   # ttype=ZIP
                     parameters['optimizer'] = None
